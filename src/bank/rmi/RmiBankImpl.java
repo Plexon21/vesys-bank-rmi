@@ -76,6 +76,7 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 		public RmiAccountImpl(Account owner, LinkedList<UpdateHandler> updater) throws IOException {
 			super();
 			this.updater = updater;
+			this.inner = owner;
 		}
 
 		@Override

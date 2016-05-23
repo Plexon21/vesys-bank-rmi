@@ -3,6 +3,8 @@ package bank.rmi;
 import java.io.IOException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 import bank.Bank;
 import bank.BankDriver2;
@@ -13,7 +15,8 @@ public class RmiDriver implements BankDriver2 {
 	@Override
 	public void connect(String[] args) throws IOException {
 		try {
-			bank = (RmiBank) Naming.lookup("rmi://localhost:1099/bank");
+			Registry registry = LocateRegistry.getRegistry(1099);			
+			bank = (RmiBank) registry.lookup("Bank");
 		} catch (NotBoundException e) {
 			e.printStackTrace();
 		}
