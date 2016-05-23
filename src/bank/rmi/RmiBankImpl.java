@@ -24,7 +24,7 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 		inner = new Driver.Bank();
 	}
 
-	private final List<UpdateHandler> handlers = new LinkedList<>();
+	private final LinkedList<UpdateHandler> handlers = new LinkedList<>();
 
 	@Override
 	public String createAccount(String owner) throws IOException {
@@ -36,26 +36,20 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 	@Override
 	public boolean closeAccount(String accountNr) throws IOException {
 		boolean end = inner.closeAccount(accountNr);
-		if (end) {
+		if (end)
 			update(accountNr);
-		}
 		return end;
 	}
 
 	@Override
 	public Set<String> getAccountNumbers() throws IOException {
-		Set<String> activeAccounts = new HashSet<>();
-		for (Account acc : accounts.values()) {
-			if (acc.isActive()) {
-				activeAccounts.add(acc.getNumber());
-			}
-		}
-		return activeAccounts;
+		return inner.getAccountNumbers();
 	}
 
 	@Override
 	public Account getAccount(String accountNr) throws IOException {
-		return ((inner.getAccount(accountNr)==null)? null:(new RmiAccountImpl(inner.getAccount(accountNr),handlers));
+		return ((inner.getAccount(accountNr) == null) ? null
+				: (new RmiAccountImpl(inner.getAccount(accountNr), handlers)));
 	}
 
 	@Override
@@ -65,52 +59,53 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 
 	}
 
-	@Override
-	public void registerUpdateHandler(Update u) throws RemoteException {
-		if (u != null)
-			handlers.add(u);
-
-	}
-
 	public void update(String accountNr) {
-		for (Update ru : handlers) {
-			try {
-				ru.update(accountNr);
-			} catch (RemoteException e) {
-				e.printStackTrace();
-				handlers.remove(ru);
-			}
-		}
-	}
 
-	public class RmiAccountImpl extends LocalAccount implements RmiAccount {
-		private List<UpdateHandler> updater;
-
-		public void setActive(boolean active) {
-			this.active = active;
-		}
-
-		public RmiAccountImpl(String owner, List<UpdateHandler> updater) {
-			super(owner);
-			this.updater = updater;
-		}
-
-		@Override
-		public void deposit(double amount) throws InactiveException, IOException {
-			super.deposit(amount);
-			updater.update(getNumber());
-		}
-
-		@Override
-		public void withdraw(double amount) throws InactiveException, OverdrawException, IOException {
-			super.withdraw(amount);
-			updater.update(getNumber());
-		}
 	}
 
 	@Override
 	public void registerUpdateHandler(RmiUpdateHandler u) throws RemoteException {
 		// TODO Auto-generated method stub
 
+	}
+
+	public class RmiAccountImpl extends UnicastRemoteObject implements RmiAccount {
+		private LinkedList<UpdateHandler> updater;
+		private Account inner;
+
+		public RmiAccountImpl(Account owner, LinkedList<UpdateHandler> updater) throws IOException {
+			super();
+			this.updater = updater;
+		}
+
+		@Override
+		public void deposit(double amount) throws InactiveException, IOException {
+			inner.deposit(amount);
+		}
+
+		@Override
+		public void withdraw(double amount) throws InactiveException, OverdrawException, IOException {
+			inner.withdraw(amount);
+		}
+
+		@Override
+		public String getNumber() throws IOException {
+			return inner.getNumber();
+		}
+
+		@Override
+		public String getOwner() throws IOException {
+			return inner.getOwner();
+		}
+
+		@Override
+		public boolean isActive() throws IOException {
+			return inner.isActive();
+		}
+
+		@Override
+		public double getBalance() throws IOException {
+			return inner.getBalance();
+		}
 	}
 }
