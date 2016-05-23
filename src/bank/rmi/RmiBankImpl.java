@@ -3,9 +3,7 @@ package bank.rmi;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 import bank.Account;
@@ -14,9 +12,10 @@ import bank.BankDriver2.UpdateHandler;
 import bank.InactiveException;
 import bank.OverdrawException;
 import bank.local.Driver;
-import bank.local.LocalAccount;
 
 public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
+
+	private static final long serialVersionUID = 1L;
 	private Bank inner;
 
 	protected RmiBankImpl() throws RemoteException {
@@ -55,21 +54,23 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 	@Override
 	public void transfer(Account a, Account b, double amount)
 			throws IOException, IllegalArgumentException, OverdrawException, InactiveException {
-		// TODO Auto-generated method stub
-
+		inner.transfer(a, b, amount);
 	}
 
-	public void update(String accountNr) {
-
+	public void update(String accountNr) throws IOException {
+		for (UpdateHandler u : handlers) {
+			u.accountChanged(accountNr);
+		}
 	}
 
 	@Override
 	public void registerUpdateHandler(RmiUpdateHandler u) throws RemoteException {
-		// TODO Auto-generated method stub
-
+		handlers.add(u);
 	}
 
 	public class RmiAccountImpl extends UnicastRemoteObject implements RmiAccount {
+		
+		private static final long serialVersionUID = 1L;
 		private LinkedList<UpdateHandler> updater;
 		private Account inner;
 
