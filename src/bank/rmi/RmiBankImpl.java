@@ -3,9 +3,7 @@ package bank.rmi;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 import bank.Account;
@@ -14,9 +12,12 @@ import bank.BankDriver2.UpdateHandler;
 import bank.InactiveException;
 import bank.OverdrawException;
 import bank.local.Driver;
-import bank.local.LocalAccount;
 
 public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 649713363348103036L;
 	private Bank inner;
 
 	protected RmiBankImpl() throws RemoteException {
@@ -49,14 +50,15 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 	@Override
 	public Account getAccount(String accountNr) throws IOException {
 		return ((inner.getAccount(accountNr) == null) ? null
-				: (new RmiAccountImpl(inner.getAccount(accountNr), handlers)));
+				: (new RmiAccountImpl(inner.getAccount(accountNr))));
 	}
 
 	@Override
 	public void transfer(Account a, Account b, double amount)
 			throws IOException, IllegalArgumentException, OverdrawException, InactiveException {
-		// TODO Auto-generated method stub
-
+		inner.transfer(a, b, amount);
+		update(a.getNumber());
+		update(b.getNumber());
 	}
 
 	public void update(String accountNr) {
@@ -70,23 +72,27 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 	}
 
 	public class RmiAccountImpl extends UnicastRemoteObject implements RmiAccount {
-		private LinkedList<UpdateHandler> updater;
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -520467193761734515L;
 		private Account inner;
 
-		public RmiAccountImpl(Account owner, LinkedList<UpdateHandler> updater) throws IOException {
+		public RmiAccountImpl(Account owner) throws IOException {
 			super();
-			this.updater = updater;
 			this.inner = owner;
 		}
 
 		@Override
 		public void deposit(double amount) throws InactiveException, IOException {
 			inner.deposit(amount);
+			update(inner.getNumber());
 		}
 
 		@Override
 		public void withdraw(double amount) throws InactiveException, OverdrawException, IOException {
 			inner.withdraw(amount);
+			update(inner.getNumber());
 		}
 
 		@Override
