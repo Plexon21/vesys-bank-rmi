@@ -1,16 +1,11 @@
 package bank.rmi;
 
 import java.io.IOException;
-
-import bank.local.Driver;
-
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import bank.Account;
@@ -18,6 +13,7 @@ import bank.Bank;
 import bank.BankDriver2.UpdateHandler;
 import bank.InactiveException;
 import bank.OverdrawException;
+import bank.local.Driver;
 import bank.local.LocalAccount;
 
 public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
