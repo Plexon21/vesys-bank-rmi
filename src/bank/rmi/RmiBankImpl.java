@@ -15,7 +15,7 @@ import bank.local.Driver;
 
 public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 649713363348103036L;
 	private Bank inner;
 
 	protected RmiBankImpl() throws RemoteException {
@@ -48,13 +48,15 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 	@Override
 	public Account getAccount(String accountNr) throws IOException {
 		return ((inner.getAccount(accountNr) == null) ? null
-				: (new RmiAccountImpl(inner.getAccount(accountNr), handlers)));
+				: (new RmiAccountImpl(inner.getAccount(accountNr))));
 	}
 
 	@Override
 	public void transfer(Account a, Account b, double amount)
 			throws IOException, IllegalArgumentException, OverdrawException, InactiveException {
 		inner.transfer(a, b, amount);
+		update(a.getNumber());
+		update(b.getNumber());
 	}
 
 	public void update(String accountNr) throws IOException {
@@ -69,25 +71,26 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 	}
 
 	public class RmiAccountImpl extends UnicastRemoteObject implements RmiAccount {
-		
-		private static final long serialVersionUID = 1L;
-		private LinkedList<UpdateHandler> updater;
+
+		private static final long serialVersionUID = -520467193761734515L;
+
 		private Account inner;
 
-		public RmiAccountImpl(Account owner, LinkedList<UpdateHandler> updater) throws IOException {
+		public RmiAccountImpl(Account owner) throws IOException {
 			super();
-			this.updater = updater;
 			this.inner = owner;
 		}
 
 		@Override
 		public void deposit(double amount) throws InactiveException, IOException {
 			inner.deposit(amount);
+			update(inner.getNumber());
 		}
 
 		@Override
 		public void withdraw(double amount) throws InactiveException, OverdrawException, IOException {
 			inner.withdraw(amount);
+			update(inner.getNumber());
 		}
 
 		@Override
