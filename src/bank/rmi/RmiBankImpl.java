@@ -16,7 +16,7 @@ import bank.local.Driver;
 public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 
 	private static final long serialVersionUID = 649713363348103036L;
-	private Bank inner;
+	private final Bank inner;
 
 	protected RmiBankImpl() throws RemoteException {
 		super();
@@ -28,8 +28,11 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 	@Override
 	public String createAccount(String owner) throws IOException {
 		String accountNr = inner.createAccount(owner);
-		update(accountNr);
-		return accountNr;
+		if (accountNr != null) {
+			update(accountNr);
+			return accountNr;
+		} else
+			return null;
 	}
 
 	@Override
@@ -47,8 +50,7 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 
 	@Override
 	public Account getAccount(String accountNr) throws IOException {
-		return ((inner.getAccount(accountNr) == null) ? null
-				: (new RmiAccountImpl(inner.getAccount(accountNr))));
+		return ((inner.getAccount(accountNr) == null) ? null : (new RmiAccountImpl(inner.getAccount(accountNr))));
 	}
 
 	@Override
@@ -74,7 +76,7 @@ public class RmiBankImpl extends UnicastRemoteObject implements RmiBank {
 
 		private static final long serialVersionUID = -520467193761734515L;
 
-		private Account inner;
+		private final Account inner;
 
 		public RmiAccountImpl(Account owner) throws IOException {
 			super();
