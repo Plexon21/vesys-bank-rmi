@@ -18,14 +18,12 @@ import bank.util.CommandName;
 import bank.util.Result;
 
 public class JmsServerHandler implements Runnable {
-	private JMSProducer sender;
 	private Destination destination;
 	private Command inputCmd;
 	private Bank bank;
 	private ObjectMapper mapper;
 
-	public JmsServerHandler(JMSProducer sender, Destination destination, Command inputCmd, Bank localBank,ObjectMapper mapper) {
-		this.sender = sender;
+	public JmsServerHandler( Destination destination, Command inputCmd, Bank localBank,ObjectMapper mapper) {
 		this.destination = destination;
 		this.inputCmd = inputCmd;
 		this.bank = localBank;

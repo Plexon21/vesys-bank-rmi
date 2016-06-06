@@ -43,7 +43,6 @@ public class JmsServer implements Runnable, BankDriver2.UpdateHandler {
 	private Queue queue;
 	private Topic topic;
 	private ObjectMapper mapper;
-	private JMSProducer sender;
 	private Result r;
 
 	public JmsServer(Bank localBank) throws NamingException {
@@ -52,12 +51,10 @@ public class JmsServer implements Runnable, BankDriver2.UpdateHandler {
 		commandAcceptor = new Thread(this);
 		mapper = new ObjectMapper();
 		mapper.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
-		mapper.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
 		jndiContext = new InitialContext();
 		factory = (ConnectionFactory) jndiContext.lookup("ConnectionFactory");
 		queue = (Queue) jndiContext.lookup("/queue/BANK");
 		topic = (Topic) jndiContext.lookup("/topic/BANK");
-		sender = ((JMSContext) jndiContext).createProducer();
 	}
 
 	public static void main(String[] args) throws NamingException {

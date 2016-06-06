@@ -47,7 +47,7 @@ public class JmsDriver implements BankDriver2 {
 			handler = new JmsUpdateHandler();
 			handler.start();
 		} catch (NamingException e) {
-			throw new IOException(e);
+			e.printStackTrace();
 		}
 	}
 
@@ -85,11 +85,9 @@ public class JmsDriver implements BankDriver2 {
 		@SuppressWarnings("unchecked")
 		protected Result request(Command outputCmd) throws IOException {
 			try (JMSContext context = factory.createContext()) {
-				// Create queue for input command
-				TemporaryQueue tmpQueue = context.createTemporaryQueue();
 
-				JMSProducer sender = context.createProducer().setJMSReplyTo(tmpQueue);
-				JMSConsumer receiver = context.createConsumer(tmpQueue);
+				JMSProducer sender = context.createProducer().setJMSReplyTo(queue);
+				JMSConsumer receiver = context.createConsumer(queue);
 
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
 				mapper.writeValue(out, outputCmd);
