@@ -93,6 +93,8 @@ public class JmsDriver implements BankDriver2 {
 				mapper.writeValue(out, outputCmd);
 				sender.send(queue, out.toByteArray());
 				byte[] msg = receiver.receiveBody(byte[].class);
+
+				String str = new String(msg);
 				return (Result) mapper.readValue(msg, Result.class);
 			}
 		}
@@ -155,8 +157,8 @@ public class JmsDriver implements BankDriver2 {
 			} catch (Exception e) {
 				e.printStackTrace(System.err);
 			}
-			if (r.exception != null) {
-				switch (r.exception) {
+			if (r.arguments != null) {
+				switch (r.arguments) {
 				case "Inactive":
 					throw new InactiveException();
 				case "IllegalArgument":
@@ -205,8 +207,8 @@ public class JmsDriver implements BankDriver2 {
 				if (isActive()) {
 					Result r = request(
 							new Command(CommandName.deposit, new String[] { getNumber(), String.valueOf(amount) }));
-					if (r.exception != null) {
-						switch (r.exception) {
+					if (r.arguments != null) {
+						switch (r.arguments) {
 						case "Inactive":
 							throw new InactiveException();
 						case "IllegalArgument":
@@ -225,8 +227,8 @@ public class JmsDriver implements BankDriver2 {
 				if (isActive()) {
 					Result r = request(
 							new Command(CommandName.withdraw, new String[] { getNumber(), String.valueOf(amount) }));
-					if (r.exception != null) {
-						switch (r.exception) {
+					if (r.arguments != null) {
+						switch (r.arguments) {
 						case "Inactive":
 							throw new InactiveException();
 						case "IllegalArgument":

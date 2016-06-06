@@ -2,12 +2,12 @@ package bank.util;
 
 public class Result {
 	public CommandName name;
-	public String exception = null;
+	public String arguments = null;
 	public Object resultValue;
 
 	public Result(CommandName name, String ex, Object o) {
 		this.name = name;
-		this.exception = ex;
+		this.arguments = ex;
 		this.resultValue = o;
 	}
 	

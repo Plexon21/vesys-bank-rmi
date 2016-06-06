@@ -22,11 +22,13 @@ public class JmsServerHandler implements Runnable {
 	private Command inputCmd;
 	private Bank bank;
 	private ObjectMapper mapper;
+	private JMSProducer sender;
 
-	public JmsServerHandler( Destination destination, Command inputCmd, Bank localBank,ObjectMapper mapper) {
+	public JmsServerHandler( JMSProducer sender, Destination destination, Command inputCmd, Bank localBank,ObjectMapper mapper) {
 		this.destination = destination;
 		this.inputCmd = inputCmd;
 		this.bank = localBank;
+		this.sender = sender;
 	}
 
 	@Override
@@ -152,6 +154,10 @@ public class JmsServerHandler implements Runnable {
 		default:
 			System.out.println("fail");
 		}
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		mapper.writeValue(out, r);
+		System.out.println(new String(out.toByteArray()));
+		sender.send(destination, out.toByteArray());
 	}
 
 }

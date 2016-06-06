@@ -39,6 +39,7 @@ public class JmsServer implements Runnable, BankDriver2.UpdateHandler {
 	private Thread commandAcceptor;
 	private boolean running = false;
 	private Context jndiContext;
+	private ExecutorService executors;
 	private ConnectionFactory factory;
 	private Queue queue;
 	private Topic topic;
@@ -50,7 +51,9 @@ public class JmsServer implements Runnable, BankDriver2.UpdateHandler {
 		this.bank = localBank;
 		commandAcceptor = new Thread(this);
 		mapper = new ObjectMapper();
+		executors = Executors.newFixedThreadPool(20);
 		mapper.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+		mapper.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE);
 		jndiContext = new InitialContext();
 		factory = (ConnectionFactory) jndiContext.lookup("ConnectionFactory");
 		queue = (Queue) jndiContext.lookup("/queue/BANK");
@@ -77,141 +80,21 @@ public class JmsServer implements Runnable, BankDriver2.UpdateHandler {
 	public void run() {
 		try (JMSContext context = factory.createContext()) {
 			JMSConsumer consumer = context.createConsumer(queue);
+			JMSProducer sender = context.createProducer();
 			while (running) {
 				Message request = consumer.receive();
 				try {
 					JsonParser parser = mapper.getFactory()
 							.createParser(new ByteArrayInputStream(request.getBody(byte[].class)));
 					Command c = mapper.readValue(parser, Command.class);
-					executeCommand(c);
+					executors.submit(new JmsServerHandler(sender, request.getJMSReplyTo(), c, bank,mapper));
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 		}
 	}
-
-	private void executeCommand(Command c) throws Exception {
-		r = new Result();
-
-		switch (c.name) {
-		case deposit: {
-			String number = c.arguments[0];
-			double amount = Double.parseDouble(c.arguments[1]);
-			Account acc = bank.getAccount(number);
-			try {
-				acc.deposit(amount);
-				accountChanged(number);
-				r = new Result(CommandName.deposit, null, null);
-			} catch (InactiveException e) {
-				r = new Result(CommandName.deposit, "Inactive", null);
-			} catch (IllegalArgumentException e) {
-				r = new Result(CommandName.deposit, "IllegalArgument", null);
-			} catch (NullPointerException e) {
-				r = new Result(CommandName.deposit, "IO", null);
-			}
-			break;
-		}
-		case withdraw: {
-			String number = c.arguments[0];
-			double amount = Double.parseDouble(c.arguments[1]);
-			Account acc = bank.getAccount(number);
-			try {
-				acc.withdraw(amount);
-				accountChanged(number);
-				r = new Result(CommandName.withdraw, null, null);
-			} catch (InactiveException e) {
-				r = new Result(CommandName.withdraw, "Inactive", null);
-			} catch (IllegalArgumentException e) {
-				r = new Result(CommandName.withdraw, "IllegalArgument", null);
-			} catch (OverdrawException e) {
-				r = new Result(CommandName.withdraw, "Overdraw", null);
-			} catch (NullPointerException e) {
-				r = new Result(CommandName.withdraw, "IO", null);
-			}
-			break;
-		}
-		case transfer: {
-			Account from = bank.getAccount(c.arguments[0]);
-			Account to = bank.getAccount(c.arguments[1]);
-			double amount = Double.parseDouble(c.arguments[2]);
-			try {
-				bank.transfer(from, to, amount);
-				accountChanged(c.arguments[0]);
-				accountChanged(c.arguments[1]);
-				r = new Result(CommandName.transfer, null, null);
-			} catch (InactiveException e) {
-				r = new Result(CommandName.transfer, "Inactive", null);
-			} catch (IllegalArgumentException e) {
-				r = new Result(CommandName.transfer, "IllegalArgument", null);
-			} catch (OverdrawException e) {
-				r = new Result(CommandName.transfer, "Overdraw", null);
-			} catch (NullPointerException e) {
-				r = new Result(CommandName.transfer, "IO", null);
-			}
-			break;
-		}
-		case createAccount: {
-			String owner = c.arguments[0];
-			try {
-				String number = bank.createAccount(owner);
-				r = new Result(CommandName.createAccount, null, number);
-			} catch (NullPointerException e) {
-				r = new Result(CommandName.createAccount, "IO", null);
-			}
-			break;
-		}
-		case closeAccount: {
-			String number = c.arguments[0];
-			try {
-				Boolean result = bank.closeAccount(number);
-				accountChanged(number);
-				accountChanged(number);
-				r = new Result(CommandName.closeAccount, null, result);
-			} catch (NullPointerException e) {
-				r = new Result(CommandName.closeAccount, "IO", null);
-			}
-			break;
-		}
-		case getAccountNumbers: {
-			Set<String> result = bank.getAccountNumbers();
-			r = new Result(CommandName.getAccountNumbers, null, result);
-			break;
-		}
-		case getAccount: {
-			String number = c.arguments[0];
-			Account acc = bank.getAccount(number);
-			String[] res = new String[2];
-			if (acc != null) {
-				res[0] = number;
-				res[1] = bank.getAccount(number).getOwner();
-			} else
-				res = null;
-			r = new Result(CommandName.getAccount, null, res);
-			break;
-		}
-		case getBalance: {
-			String number = c.arguments[0];
-			try {
-				r = new Result(CommandName.getBalance, null, bank.getAccount(number).getBalance());
-			} catch (NullPointerException e) {
-				r = new Result(CommandName.getBalance, "IO", null);
-			}
-			break;
-		}
-		case isActive: {
-			try {
-				String number = c.arguments[0];
-				r = new Result(CommandName.isActive, null, bank.getAccount(number).isActive());
-			} catch (NullPointerException e) {
-				r = new Result(CommandName.isActive, "IO", null);
-			}
-			break;
-		}
-		default:
-
-		}
-	}
+	
 
 	@Override
 	public void accountChanged(String id) throws IOException {
